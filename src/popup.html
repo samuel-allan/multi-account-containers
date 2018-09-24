@@ -184,8 +184,8 @@
             <legend>Choose an icon</legend>
           </fieldset>
           <fieldset>
-            <legend>Enter a custom HTTP proxy to use with this container</legend>
-            <input type="text" name="container-proxy" id="edit-container-panel-proxy" maxlength="15" placeholder="leave blank for no HTTP proxy"/>
+            <legend>HTTP Proxy (Optional)</legend>
+            <input type="text" name="container-proxy" id="edit-container-panel-proxy" maxlength="15" placeholder="IP:PORT or USER:PASS@IP:PORT"/>         
           </fieldset>
         </form>
         <div id="edit-sites-assigned" class="scrollable" hidden>
@@ -217,6 +217,7 @@
   </div>
 
   <script src="js/utils.js"></script>
+  <script src="js/proxified-containers.js"></script>
   <script src="js/popup.js"></script>
 </body>
 </html>

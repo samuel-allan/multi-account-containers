@@ -1,13 +1,13 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 const CONTAINER_HIDE_SRC = "/img/container-hide.svg";
 const CONTAINER_UNHIDE_SRC = "/img/container-unhide.svg";
 
 const DEFAULT_COLOR = "blue";
 const DEFAULT_ICON = "circle";
 const NEW_CONTAINER_ID = "new";
+const DEFAULT_PROXY = {type: "direct"};
 
 const ONBOARDING_STORAGE_KEY = "onboarding-stage";
 
@@ -294,6 +294,10 @@ const Logic = {
   currentUserContextId() {
     const identity = Logic.currentIdentity();
     return Logic.userContextId(identity.cookieStoreId);
+  },
+
+  cookieStoreId(userContextId) {
+    return `firefox-container-${userContextId}`;
   },
 
   currentCookieStoreId() {
@@ -892,8 +896,6 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
     this._editForm.addEventListener("submit", () => {
       this._submitForm();
     });
-
-
   },
 
   async _submitForm() {
@@ -906,8 +908,9 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
           params: {
             name: document.getElementById("edit-container-panel-name-input").value || Logic.generateIdentityName(),
             icon: formValues.get("container-icon") || DEFAULT_ICON,
-            color: formValues.get("container-color") || DEFAULT_COLOR,
-          }
+            color: formValues.get("container-color") || DEFAULT_COLOR
+          },
+          proxy: window.proxifiedContainers.parseProxy(document.getElementById("edit-container-panel-proxy").value) || DEFAULT_PROXY
         }
       });
       await Logic.refreshIdentities();
@@ -1006,6 +1009,28 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
     });
     [...document.querySelectorAll("[name='container-icon']")].forEach(iconInput => {
       iconInput.checked = iconInput.value === identity.icon;
+    });
+
+    var edit_proxy_dom = function(result) {
+      if(result.type == "http")
+        document.querySelector('#edit-container-panel-proxy').value = result.host.toString() + ":" + result.port.toString();
+      else if(result.type == "direct")
+        document.querySelector('#edit-container-panel-proxy').value = "";
+    }
+
+    window.proxifiedContainers.retrieve(identity.cookieStoreId).then((result) => {
+      edit_proxy_dom(result.proxy);
+    }, (error) => {
+      if(error.error == "uninitialized" || error.error == "doesnotexist") {
+        window.proxifiedContainers.set(identity.cookieStoreId, DEFAULT_PROXY, error.error == "uninitialized").then((result) => {
+          edit_proxy_dom(result.proxy);
+        }, (error) => {
+          browser.extension.getBackgroundPage().console.log(error);
+        });
+      }
+      else {
+        browser.extension.getBackgroundPage().console.log(error);
+      }
     });
 
     return Promise.resolve(null);
